@@ -1,5 +1,6 @@
 import requests
 import bs4
+from info import URL, USERNAME, PASSWORD
 
 
 class SchoologyScraper:
@@ -42,8 +43,6 @@ class SchoologyScraper:
 
 
 if __name__ == "__main__":
-    scraper = SchoologyScraper(
-        "https://parkland.schoology.com/", "parklandsd.org\\", ""
-    )
+    scraper = SchoologyScraper(URL, USERNAME, PASSWORD)
     scraper.login()
     scraper.homepage()
