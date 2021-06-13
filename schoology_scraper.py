@@ -1,6 +1,6 @@
 import requests
-import bs4
-from info import URL, USERNAME, PASSWORD
+from bs4 import BeautifulSoup
+import json
 
 
 class SchoologyScraper:
@@ -9,11 +9,16 @@ class SchoologyScraper:
         self.username = username
         self.password = password
         self.session = requests.Session()
+        self.login()
 
     def login(self):
+        """
+        Login to schoology.
+        This method is run on the creation of a SchoologyScraper object.
+        """
         # initial login page
         res = self.session.get(self.url)
-        soup = bs4.BeautifulSoup(res.content, "html.parser")
+        soup = BeautifulSoup(res.content, "html.parser")
         url = soup.find(id="options").attrs["action"]
 
         # login in
@@ -25,7 +30,7 @@ class SchoologyScraper:
                 "AuthMethod": "FormsAuthentication",
             },
         )
-        soup = bs4.BeautifulSoup(res.content, "html.parser")
+        soup = BeautifulSoup(res.content, "html.parser")
         form = soup.find("form")
         url = form.attrs["action"]
         saml = form.find("input", {"name": "SAMLResponse"}).attrs["value"]
@@ -37,12 +42,21 @@ class SchoologyScraper:
             data={"SAMLResponse": saml, "RelayState": relayState},
         )
 
-    def homepage(self):
-        res = self.session.get(self.url + "home")
-        # TODO: use requests_html or scrapy to render javascript
+        return res.url == self.url + "home"
 
+    def get_assignments(self, t_from: int, t_to: int):
+        """
+        Returns a list of assignments within the given timeframe.
+        All time is in seconds from epoch.
 
-if __name__ == "__main__":
-    scraper = SchoologyScraper(URL, USERNAME, PASSWORD)
-    scraper.login()
-    scraper.homepage()
+        Keyword arguments:
+        t_from -- The time that the calendar will start at
+        t_to -- The time that the calendar will end at
+        """
+        res = self.session.get(self.url + "user-calendar")
+        res = self.session.get(
+            f"{res.url}?ajax=1&start={t_from}&end={t_to}&_=1623553551138"
+        )
+        data = json.loads(res.content)
+
+        return data
